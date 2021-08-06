@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LLISTAT GRUPS SEGURETAT D'USUARIS</title>
+ 
+    <HTA:APPLICATION
+        APPLICATIONNAME = "LLISTAT GRUPS SEGURETAT D'USUARIS"
+		id="LLISTAT GRUPS SEGURETAT D'USUARIS"
+		name="LLISTAT GRUPS SEGURETAT D'USUARIS"
+    />
+	
+	<script language="vbscript">
+	
+	
+'-------------------------------------'
+'INICI BOTO EXECUTA'
+	Sub Executa
+
+		strText = txt_entrada.Value
+    	arrLines = Split(strText, vbCrLf)
+    	For Each strLine in arrLines
+		
+			StrUserName = strLine
+			resultat = resultat & vbCRLF
+		    resultat = resultat & StrUserName & vbCrLf
+		    resultat = resultat & vbCrLf
+ 
+
+			Set ObjRootDSE = GetObject("LDAP://RootDSE") 
+			StrDomName = Trim(ObjRootDSE.Get("DefaultNamingContext")) 
+			Set ObjRootDSE = Nothing 
+
+			    StrSQL = "Select ADsPath From 'LDAP://" & StrDomName & "' Where ObjectCategory = 'User' AND SAMAccountName = '" & StrUserName & "'" 
+			 
+			    Set ObjConn = CreateObject("ADODB.Connection") 
+			    ObjConn.Provider = "ADsDSOObject":    ObjConn.Open "Active Directory Provider" 
+			    Set ObjRS = CreateObject("ADODB.Recordset") 
+			    ObjRS.Open StrSQL, ObjConn 
+			    If Not ObjRS.EOF Then 
+			        ObjRS.MoveLast:    ObjRS.MoveFirst 
+			        
+			        Set ObjUser = GetObject (Trim(ObjRS.Fields("ADsPath").Value)) 
+			        Set GroupCollection = ObjUser.Groups 
+			        For Each ObjGroup In GroupCollection 
+			        If InStr(ObjGroup.CN,filtre.value) > 0 Then
+			        	'If InStr(ObjGroup.CN,"MAP") > 0 Then'
+            				resultat = resultat & ObjGroup.CN & vbCrLf
+       					End If
+
+			            txt_sortida.value = resultat
+			        'End If'
+			    
+			        Next 
+
+			        Set ObjGroup = Nothing:    Set GroupCollection = Nothing:    Set ObjUser = Nothing 
+			        
+			        'WScript.Echo vbNullString '
+			        escriu = escriu & vbCrLf
+
+			    Else 
+			        'resultat  "Lusuari: " & StrUserName & " no sha trobat al domini"'
+			    End If 
+			    ObjRS.Close:    Set ObjRS = Nothing 
+			    ObjConn.Close:    Set ObjConn = Nothing 
+
+			 
+	Next
+
+
+
+
+End Sub
+'FI BOTO EXECUTA'
+'-------------------------------------'
+
+
+	
+	</script>
+	
+	</head>
+ 
+<body>
+    <h1>LLISTA GRUPS DE SEGURETAT D'USUARIS</h1>
+    <p><b>Enganxa el llistat d'usuaris</b></p>
+    <p><i>* No pot quedar cap espai ni linia en blanc al final del llistat.</i></p>
+	
+	<textarea name="txt_entrada" rows=10 cols="50" ></textarea>
+	</textarea>
+	<br>
+	<br>
+	<b>Filtra:</b><br><textarea name = "filtre" rows=1 cols=50></textarea> <br> <br>
+    <input type="button" value="  Llista grups  " onclick="Executa">
+
+    <!-- CAIXA TEXT RESULTAT -->
+    <br>
+    <br>
+    <textarea name="txt_sortida" rows=50  cols=90></textarea>
+	
+</body>
+ 
+</html>
